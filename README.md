@@ -1,81 +1,62 @@
-Symfony Demo Application
-========================
+AFUP Docker Sandboxes demo
+==========================
 
-The "Symfony Demo Application" is a reference application created to show how
-to develop applications following the [Symfony Best Practices][1].
+A Symfony application with two bugs planted in it, and the files to have a
+coding agent fix them inside a Docker sandbox. It's the demo material for the
+"Docker Sandboxes" talk at Forum PHP 2026 / INSA, and you can replay it on your
+own machine.
 
-You can also learn about these practices in [the official Symfony Book][5].
+The two bugs are one character each:
 
-Requirements
-------------
+- `src/Twig/AppExtension.php`: `isRtl()` negates its `in_array` check.
+- `src/Utils/Validator.php`: `validatePassword()` compares the length with
+  `> 6` instead of `< 6`.
 
-  * PHP 8.2.0 or higher;
-  * PDO-SQLite PHP extension enabled;
-  * and the [usual Symfony application requirements][2].
+`php bin/phpunit` fails on both. Once they're fixed, the 53 tests pass.
 
-Installation
-------------
+What is Docker Sandboxes
+------------------------
 
-There are 3 different ways of installing this project depending on your needs:
+[Docker Sandboxes](https://docs.docker.com/ai/sandboxes/) (the `sbx` command)
+runs a coding agent, here Claude Code, in a sandbox: an isolated environment
+where the agent works on your project, mounted from the host. In the sandbox
+the agent runs in "YOLO mode", with no permission prompts. It has its own
+Docker engine, separate from the one on your machine, and it can only reach
+the network hosts that a policy allows.
 
-**Option 1.** [Download Symfony CLI][4] and use the `symfony` binary installed
-on your computer to run this command:
+What the demo shows
+-------------------
 
-```bash
-symfony new --demo my_project
-```
+The talk runs four short demos (slides 21 and 29):
 
-**Option 2.** [Download Composer][6] and use the `composer` binary installed
-on your computer to run these commands:
+1. Claude Code installs PHP and Composer in a fresh sandbox, finds the two
+   bugs and fixes them until PHPUnit is green, without asking for permission.
+2. The application's Docker Compose stack (nginx, php-fpm, Postgres) runs
+   inside the sandbox, and one port is published to the host.
+3. A network policy blocks a request, then allows it.
+4. An MCP server (Notion) is reached through the sandbox's gateway. This one
+   is optional.
 
-```bash
-# you can create a new project based on the Symfony Demo project...
-composer create-project symfony/symfony-demo my_project
+What's in this repo
+-------------------
 
-# ...or you can clone the code repository and install its dependencies
-git clone https://github.com/symfony/demo.git my_project
-cd my_project/
-composer install
-```
+- **The application**: a fork of [symfony/demo][7] (MIT licensed) with the two
+  bugs injected on purpose.
+- **`compose.yaml` and `docker/`**: the Compose stack from demo 2.
+- **`kit/`**: a Docker Sandboxes kit that starts Claude Code in a sandbox with
+  the two network hosts Composer needs already allowed.
+- **[`slides/afup-docker-sandboxes.pdf`](slides/afup-docker-sandboxes.pdf)**:
+  the talk's slides. The docs refer to them by slide number.
+- **`DEMO.md` and `docs/`**: how to run the demos, and why they work this way.
 
-Usage
------
+Where to start
+--------------
 
-There's no need to configure anything before running the application. There are
-2 different ways of running this application depending on your needs:
+| You want to… | Read |
+|---|---|
+| Replay the four demos step by step | [`DEMO.md`](DEMO.md) (tutorial) |
+| Do one specific thing: warm up a sandbox, log in, allow the Composer hosts | [`docs/how-to.md`](docs/how-to.md) |
+| Look up a version, a git tag, a slide/CLI difference, or what the kit declares | [`docs/reference.md`](docs/reference.md), [`kit/README.md`](kit/README.md) |
+| Understand why the demo and the kit work the way they do | [`docs/explanation.md`](docs/explanation.md) |
 
-**Option 1.** [Download Symfony CLI][4] and run this command:
-
-```bash
-cd my_project/
-symfony serve
-```
-
-Then access the application in your browser at the given URL (<https://localhost:8000> by default).
-
-**Option 2.** Use a web server like Nginx or Apache to run the application
-(read the documentation about [configuring a web server for Symfony][3]).
-
-On your local machine, you can run this command to use the built-in PHP web server:
-
-```bash
-cd my_project/
-php -S localhost:8000 -t public/
-```
-
-Tests
------
-
-Execute this command to run tests:
-
-```bash
-cd my_project/
-./bin/phpunit
-```
-
-[1]: https://symfony.com/doc/current/best_practices.html
-[2]: https://symfony.com/doc/current/setup.html#technical-requirements
-[3]: https://symfony.com/doc/current/setup/web_server_configuration.html
-[4]: https://symfony.com/download
-[5]: https://symfony.com/book
-[6]: https://getcomposer.org/
+[7]: https://github.com/symfony/demo

@@ -1,0 +1,61 @@
+# syntax=docker/sandbox-kit:3
+# Docker Sandboxes kit for the AFUP "Docker Sandboxes" talk PHP demo.
+# Usage: sbx run ./kit/ .
+# See kit/README.md for details and rationale.
+#
+# Migrated from the v2 spec.yaml grammar (schemaVersion "2"). Deltas are
+# marked MIGRATION NOTE inline. v3 requires sbx v0.45 or later.
+schemaVersion: "3"
+displayName: AFUP PHP Demo (Claude)
+description: >-
+  Claude Code, pre-configured for the Symfony-based PHP demo used in the
+  Docker Sandboxes talk (Forum PHP 2026 / INSA)
+sourceUrl: https://github.com/glours/afup-sbx-demo
+version: "0.1.0"
+licenses: [MIT]
+
+# MIGRATION NOTE: v2's `name: afup-php-demo` is gone — in v3, identity is the
+# reference the kit is consumed by (here, the ./kit/ directory).
+kind: workload
+
+# The base image and the entrypoint live in afup-php-demo.dockerfile (v2's
+# sandbox.image and sandbox.entrypoint). Same template Demo 1 uses without a
+# kit — this kit only adds permissions and instructions on top, it doesn't
+# change what's running.
+
+capabilities:
+  # This workload is an agent sandbox: the host launches the agent rather
+  # than running the image's entrypoint as PID 1. v2's `kind: sandbox` kits
+  # were all sbx-launched, so v3 states it explicitly.
+  - type: com.docker.sandbox/sbx@1
+
+  # Confirmed by rehearsal: getcomposer.org and composer.github.io are blocked
+  # under plain default-deny, which pushed the agent to install Composer via
+  # `apt` instead of the official installer. Allowing them here makes that
+  # choice available without a separate `sbx policy allow network` step, which
+  # matters for anyone replaying the demo from a fresh `sbx` install.
+  #
+  # Both are reached by the agent in steady state (there are no install
+  # hooks), so they go under `runtime`, v2's single flat allow list.
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - "getcomposer.org:443"
+          - "composer.github.io:443"
+
+  # Claude Code reads CLAUDE.md from the workspace root automatically; this
+  # one is written once at sandbox creation from the content of the context
+  # file (v2's agentInstructions).
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      filename: CLAUDE.md
+      contentFile: ./afup-php-demo-context.md
+
+# No `credential@1` capability. Tried re-declaring the built-in `claude`
+# agent's anthropic OAuth wiring in the v2 spec (docker/sbx-kits-contrib's
+# spec/SPEC-v2.md, §5.4.2) to carry the host's existing login over to this
+# custom-named kit agent — it didn't work cleanly (`SBX_CRED_ANTHROPIC_MODE`
+# stayed `none`, and adding `apiKey` alongside it caused "Invalid API key"
+# instead). Not retried under v3. See kit/README.md for the one-time
+# interactive login this implies.
