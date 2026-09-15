@@ -68,6 +68,6 @@ final class AppExtension
     {
         $locale ??= $this->defaultLocale;
 
-        return !\in_array($locale, ['ar', 'fa', 'he', 'ur', 'ps', 'sd'], true);
+        return \in_array($locale, ['ar', 'fa', 'he', 'ur', 'ps', 'sd'], true);
     }
 }
